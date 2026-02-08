@@ -1,4 +1,4 @@
-<!--
+﻿<!--
 New technology added to project:
 - FastAPI (backend framework)
 - SQLModel (ORM)
