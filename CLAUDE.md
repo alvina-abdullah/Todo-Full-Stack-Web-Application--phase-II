@@ -3,6 +3,10 @@ New technology added to project:
 - FastAPI (backend framework)
 - SQLModel (ORM)
 - Neon Serverless PostgreSQL (database)
+- Better Auth (Next.js authentication library)
+- python-jose (JWT verification for Python)
+- JWT (JSON Web Tokens for stateless authentication)
+- Next.js 16+ App Router (frontend framework)
 -->
 
 # Claude Code Rules

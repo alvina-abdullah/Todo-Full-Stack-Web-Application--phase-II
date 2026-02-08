@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: Task Management API
+  description: RESTful API for managing tasks with user ownership and data isolation
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: tasks
+    description: Task CRUD operations
+
+paths:
+  /api/v1/tasks:
+    get:
+      tags:
+        - tasks
+      summary: List all tasks for the authenticated user
+      description: Retrieves a list of all tasks belonging to the authenticated user, ordered by creation date (newest first)
+      operationId: listTasks
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskResponse'
+              example:
+                - id: 1
+                  title: "Buy groceries"
+                  description: "Milk, eggs, bread"
+                  completed: false
+                  user_id: 1
+                  created_at: "2026-02-08T10:00:00Z"
+                  updated_at: "2026-02-08T10:00:00Z"
+                - id: 2
+                  title: "Finish project"
+                  description: null
+                  completed: true
+                  user_id: 1
+                  created_at: "2026-02-07T15:30:00Z"
+                  updated_at: "2026-02-08T09:00:00Z"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - tasks
+      summary: Create a new task
+      description: Creates a new task for the authenticated user
+      operationId: createTask
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+            example:
+              title: "Buy groceries"
+              description: "Milk, eggs, bread"
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+              example:
+                id: 1
+                title: "Buy groceries"
+                description: "Milk, eggs, bread"
+                completed: false
+                user_id: 1
+                created_at: "2026-02-08T10:00:00Z"
+                updated_at: "2026-02-08T10:00:00Z"
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Validation error"
+                field_errors:
+                  title: ["Title cannot be empty"]
+
+  /api/v1/tasks/{task_id}:
+    get:
+      tags:
+        - tasks
+      summary: Get a specific task
+      description: Retrieves details of a specific task. Returns 404 if task doesn't exist or doesn't belong to the user.
+      operationId: getTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '403':
+          description: Access denied - task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Access denied"
+                error_code: "TASK_ACCESS_DENIED"
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Task not found"
+                error_code: "TASK_NOT_FOUND"
+
+    put:
+      tags:
+        - tasks
+      summary: Replace a task (full update)
+      description: Replaces all fields of an existing task. All fields must be provided.
+      operationId: replaceTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskReplace'
+            example:
+              title: "Buy groceries and cook dinner"
+              description: "Milk, eggs, bread, chicken"
+              completed: false
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied - task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags:
+        - tasks
+      summary: Partially update a task
+      description: Updates only the specified fields of a task. Unspecified fields remain unchanged.
+      operationId: updateTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+            examples:
+              updateTitle:
+                summary: Update only title
+                value:
+                  title: "Buy groceries and cook dinner"
+              markComplete:
+                summary: Mark task as complete
+                value:
+                  completed: true
+              updateMultiple:
+                summary: Update multiple fields
+                value:
+                  title: "Updated title"
+                  description: "Updated description"
+                  completed: true
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied - task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - tasks
+      summary: Delete a task
+      description: Permanently deletes a task. This operation cannot be undone.
+      operationId: deleteTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+        - name: user_id
+          in: query
+          required: true
+          description: User ID (temporary - will be replaced with JWT token extraction)
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '204':
+          description: Task deleted successfully (no content)
+        '403':
+          description: Access denied - task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title (required, non-empty)
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Detailed task description (optional)
+          example: "Milk, eggs, bread"
+
+    TaskReplace:
+      type: object
+      required:
+        - title
+        - completed
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title (required, non-empty)
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Detailed task description (optional)
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          description: Task completion status
+          example: false
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title (optional in PATCH)
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Detailed task description (optional)
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          description: Task completion status (optional in PATCH)
+          example: true
+
+    TaskResponse:
+      type: object
+      required:
+        - id
+        - title
+        - completed
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique task identifier
+          example: 1
+        title:
+          type: string
+          description: Task title
+          example: "Buy groceries"
+        description:
+          type: string
+          nullable: true
+          description: Task description
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          description: Task completion status
+          example: false
+        user_id:
+          type: integer
+          description: ID of the user who owns this task
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when task was created
+          example: "2026-02-08T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when task was last updated
+          example: "2026-02-08T10:00:00Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: "Task not found"
+        error_code:
+          type: string
+          description: Machine-readable error code (optional)
+          example: "TASK_NOT_FOUND"
+        field_errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Field-specific validation errors (optional)
+          example:
+            title: ["Title cannot be empty"]
+            description: ["Description too long"]
