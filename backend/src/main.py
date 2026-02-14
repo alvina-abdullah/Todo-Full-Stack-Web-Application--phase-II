@@ -1,4 +1,5 @@
 """FastAPI application entry point."""
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,12 +31,15 @@ app = FastAPI(
 )
 
 # Configure CORS
+# Get frontend URL from environment variable
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[FRONTEND_URL],  # Only allow requests from the frontend
+    allow_credentials=True,  # Required for cookies and Authorization headers
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers including Authorization
 )
 
 # Register exception handlers

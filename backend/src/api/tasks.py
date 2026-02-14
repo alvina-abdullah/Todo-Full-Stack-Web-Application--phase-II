@@ -1,10 +1,11 @@
 """Task API endpoints."""
-from typing import List
+from typing import List, Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..schemas.task import TaskCreate, TaskUpdate, TaskReplace, TaskResponse
 from ..services.task_service import TaskService
-from .dependencies import get_session, get_current_user_id
+from .dependencies import get_session
+from ..auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ router = APIRouter()
 async def create_task(
     task_data: TaskCreate,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> TaskResponse:
     """
     Create a new task.
@@ -29,7 +30,7 @@ async def create_task(
 
     Returns the created task with ID and timestamps.
     """
-    task = await TaskService.create_task(session, user_id, task_data)
+    task = await TaskService.create_task(session, int(user_id), task_data)
     return TaskResponse.model_validate(task)
 
 
@@ -42,14 +43,14 @@ async def create_task(
 )
 async def list_tasks(
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> List[TaskResponse]:
     """
     List all tasks for the authenticated user.
 
     Returns tasks ordered by creation date (newest first).
     """
-    tasks = await TaskService.list_tasks(session, user_id)
+    tasks = await TaskService.list_tasks(session, int(user_id))
     return [TaskResponse.model_validate(task) for task in tasks]
 
 
@@ -63,7 +64,7 @@ async def list_tasks(
 async def get_task(
     task_id: int,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> TaskResponse:
     """
     Get a specific task by ID.
@@ -72,7 +73,7 @@ async def get_task(
 
     Returns 404 if task doesn't exist or 403 if task belongs to another user.
     """
-    task = await TaskService.get_task(session, task_id, user_id)
+    task = await TaskService.get_task(session, task_id, int(user_id))
     return TaskResponse.model_validate(task)
 
 
@@ -87,7 +88,7 @@ async def replace_task(
     task_id: int,
     task_data: TaskReplace,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> TaskResponse:
     """
     Replace a task (full update).
@@ -99,7 +100,7 @@ async def replace_task(
 
     Returns 404 if task doesn't exist or 403 if task belongs to another user.
     """
-    task = await TaskService.replace_task(session, task_id, user_id, task_data)
+    task = await TaskService.replace_task(session, task_id, int(user_id), task_data)
     return TaskResponse.model_validate(task)
 
 
@@ -114,7 +115,7 @@ async def update_task(
     task_id: int,
     task_data: TaskUpdate,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> TaskResponse:
     """
     Partially update a task.
@@ -126,7 +127,7 @@ async def update_task(
 
     Returns 404 if task doesn't exist or 403 if task belongs to another user.
     """
-    task = await TaskService.update_task(session, task_id, user_id, task_data)
+    task = await TaskService.update_task(session, task_id, int(user_id), task_data)
     return TaskResponse.model_validate(task)
 
 
@@ -139,7 +140,7 @@ async def update_task(
 async def delete_task(
     task_id: int,
     session: AsyncSession = Depends(get_session),
-    user_id: int = Depends(get_current_user_id)
+    user_id: Annotated[str, Depends(get_current_user)] = None
 ) -> None:
     """
     Delete a task.
@@ -148,4 +149,4 @@ async def delete_task(
 
     Returns 204 on success, 404 if task doesn't exist, or 403 if task belongs to another user.
     """
-    await TaskService.delete_task(session, task_id, user_id)
+    await TaskService.delete_task(session, task_id, int(user_id))

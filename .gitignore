@@ -67,6 +67,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+.cache/
+*.tsbuildinfo
+next-env.d.ts
+
 # Spec-Kit Plus
 .specify/
 .claude/

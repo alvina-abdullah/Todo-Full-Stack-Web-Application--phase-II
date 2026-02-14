@@ -7,6 +7,9 @@ New technology added to project:
 - python-jose (JWT verification for Python)
 - JWT (JSON Web Tokens for stateless authentication)
 - Next.js 16+ App Router (frontend framework)
+- React 19+ (frontend library with useOptimistic hook)
+- TypeScript 5+ (type safety)
+- Tailwind CSS 3.x (utility-first CSS framework)
 -->
 
 # Claude Code Rules
